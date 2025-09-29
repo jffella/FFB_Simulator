@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug FFB Simulator",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\FFB_Simulator_Debug.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal",
+            "preLaunchTask": "Build FFB Simulator (Debug)"
+        },
+        {
+            "name": "Run FFB Simulator (Release)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\FFB_Simulator.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal",
+            "preLaunchTask": "Build FFB Simulator (Release)"
+        }
+    ]
+}

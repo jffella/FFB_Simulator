@@ -1,0 +1,19 @@
+{
+    "files.associations": {
+        "*.h": "c",
+        "*.hpp": "cpp",
+        "*.cpp": "cpp",
+        "iostream": "cpp",
+        "vector": "cpp",
+        "map": "cpp",
+        "string": "cpp",
+        "memory": "cpp",
+        "thread": "cpp",
+        "chrono": "cpp",
+        "windows.h": "c",
+        "dinput.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Enabled",
+    "C_Cpp.intelliSenseEngine": "Default",
+    "C_Cpp.formatting": "vcFormat"
+}

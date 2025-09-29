@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "D:/Program Files/Windows Kits/10/Include/*/um",
+                "D:/Program Files/Windows Kits/10/Include/*/shared",
+                "D:/Program Files/Windows Kits/10/Include/*/winrt",
+                "D:/Program Files/Windows Kits/10/Include/*/cppwinrt",
+                "D:/Program Files/Microsoft Visual Studio/*/VC/Tools/MSVC/*/include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "WIN32_LEAN_AND_MEAN",
+                "_WIN32_WINNT=0x0A00"
+            ],
+            "windowsSdkVersion": "10.0.26100.0",
+            "compilerPath": "D:/Program Files/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64"
+        }
+    ],
+    "version": 4
+}

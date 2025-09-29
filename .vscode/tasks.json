@@ -1,0 +1,35 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build FFB Simulator",
+            "type": "shell",
+            "command": "D:\\Program Files\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",
+            "args": [
+                "/I\"D:\\Program Files\\Windows Kits\\10\\Include\\10.0.26100.0\\um\"",
+                "/I\"D:\\Program Files\\Windows Kits\\10\\Include\\10.0.26100.0\\shared\"",
+                "/I\"D:\\Program Files\\Windows Kits\\10\\Include\\10.0.26100.0\\winrt\"",
+                "/I\"D:\\Program Files\\Windows Kits\\10\\Include\\10.0.26100.0\\ucrt\"",
+                "/EHsc",
+                "/std:c++17",
+                "/O2",
+                "/MD",
+                "/Fe:FFB_Simulator.exe",
+                "${workspaceFolder}\\FFB_Simulator.cpp",
+                "/link",
+                "/LIBPATH:\"D:\\Program Files\\Windows Kits\\10\\Lib\\10.0.26100.0\\um\\x64\"",
+                "/LIBPATH:\"D:\\Program Files\\Windows Kits\\10\\Lib\\10.0.26100.0\\ucrt\\x64\"",
+                "dinput8.lib",
+                "dxguid.lib",
+                "user32.lib",
+                "kernel32.lib"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$msCompile",
+            "detail": "Compile FFB Simulator with exact paths"
+        }
+    ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "ffb-simulator",
+  "version": "1.0.0",
+  "description": "Microsoft Sidewinder Force Feedback Wheel Simulator",
+  "scripts": {
+    "build": "build.bat",
+    "build:debug": "cl.exe /EHsc /Zi /Od /MDd /std:c++17 /Fe:FFB_Simulator_Debug.exe FFB_Simulator.cpp dinput8.lib dxguid.lib user32.lib kernel32.lib",
+    "build:release": "cl.exe /EHsc /O2 /MD /std:c++17 /Fe:FFB_Simulator.exe FFB_Simulator.cpp dinput8.lib dxguid.lib user32.lib kernel32.lib",
+    "clean": "del *.exe *.obj *.pdb *.ilk 2>nul",
+    "run": "FFB_Simulator.exe",
+    "debug": "FFB_Simulator_Debug.exe"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}
