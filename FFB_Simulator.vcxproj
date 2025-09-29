@@ -44,25 +44,26 @@
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared" />
 
-  <!-- Includes and libs d'après ta ligne -->
+  <!-- Includes and libs : utilisation de variables (relatif à l'installation de VS/SDK) -->
   <PropertyGroup>
-    <!-- Remplace si tu veux des chemins relatifs -->
-    <AdditionalIncludeDirectories>D:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include;D:\Program Files\Windows Kits\10\Include\10.0.26100.0\um;D:\Program Files\Windows Kits\10\Include\10.0.26100.0\shared;D:\Program Files\Windows Kits\10\Include\10.0.26100.0\winrt;D:\Program Files\Windows Kits\10\Include\10.0.26100.0\ucrt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    <!-- Additional include directories using MSVC / Windows SDK variables -->
+    <AdditionalIncludeDirectories>$(VCToolsInstallDir)include;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\um;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\winrt;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\ucrt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 
-    <AdditionalLibraryDirectories>D:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\lib\x64;D:\Program Files\Windows Kits\10\Lib\10.0.26100.0\um\x64;D:\Program Files\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    <AdditionalLibraryDirectories>$(VCToolsInstallDir)lib\x64;$(WindowsSdkDir)Lib\$(WindowsTargetPlatformVersion)\um\x64;$(WindowsSdkDir)Lib\$(WindowsTargetPlatformVersion)\ucrt\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 
-    <!-- La variable FBB_LIB peut être définie dans l'environnement (ex: set FBB_LIB=maLib.lib) ou remplacée ici -->
+    <!-- Laisser la variable FBB_LIB telle quelle (à définir dans l'environnement ou remplacer ici) -->
     <ProjectLinkerAdditionalDependencies>$(FBB_LIB);dinput8.lib;dxguid.lib;user32.lib;kernel32.lib;%(ProjectLinkerAdditionalDependencies)</ProjectLinkerAdditionalDependencies>
 
     <ClCompileLanguageStandard>stdc++17</ClCompileLanguageStandard>
   </PropertyGroup>
 
+  <!-- Source file is in subfolder relative to the .vcxproj -->
   <ItemGroup>
-    <ClCompile Include="FFB_Simulator.cpp" />
+    <ClCompile Include="src\**\*.cpp" />
   </ItemGroup>
 
   <PropertyGroup>
-    <!-- Options de compilation -->
+    <!-- Compilation options -->
     <ClCompile>
       <ExceptionHandling>SyncCpp</ExceptionHandling>  <!-- /EHsc -->
       <Optimization>MaxSpeed</Optimization>            <!-- /O2 -->
