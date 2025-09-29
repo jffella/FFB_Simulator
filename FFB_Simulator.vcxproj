@@ -46,20 +46,19 @@
 
   <!-- Includes and libs : utilisation de variables (relatif à l'installation de VS/SDK) -->
   <PropertyGroup>
-    <!-- Additional include directories using MSVC / Windows SDK variables -->
     <AdditionalIncludeDirectories>$(VCToolsInstallDir)include;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\um;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\winrt;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\ucrt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 
     <AdditionalLibraryDirectories>$(VCToolsInstallDir)lib\x64;$(WindowsSdkDir)Lib\$(WindowsTargetPlatformVersion)\um\x64;$(WindowsSdkDir)Lib\$(WindowsTargetPlatformVersion)\ucrt\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 
-    <!-- Laisser la variable FBB_LIB telle quelle (à définir dans l'environnement ou remplacer ici) -->
-    <ProjectLinkerAdditionalDependencies>$(FBB_LIB);dinput8.lib;dxguid.lib;user32.lib;kernel32.lib;%(ProjectLinkerAdditionalDependencies)</ProjectLinkerAdditionalDependencies>
+    <!-- Removed undefined variable; only the required system libs remain -->
+    <ProjectLinkerAdditionalDependencies>dinput8.lib;dxguid.lib;user32.lib;kernel32.lib;%(ProjectLinkerAdditionalDependencies)</ProjectLinkerAdditionalDependencies>
 
     <ClCompileLanguageStandard>stdc++17</ClCompileLanguageStandard>
   </PropertyGroup>
 
-  <!-- Source file is in subfolder relative to the .vcxproj -->
+  <!-- Compile all .cpp under ffbsimulator (recursively) -->
   <ItemGroup>
-    <ClCompile Include="src\**\*.cpp" />
+    <ClCompile Include="ffbsimulator\**\*.cpp" />
   </ItemGroup>
 
   <PropertyGroup>
