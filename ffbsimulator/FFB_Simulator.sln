@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33804.238
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FFB_Simulator", "FFB_Simulator.vcxproj", "{B3E6A9E8-1C2A-4E3F-9A5A-8AE5F1E2C6D0}"
+EndProject
+Global
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        Debug|x64 = Debug|x64
+        Release|x64 = Release|x64
+    EndGlobalSection
+    GlobalSection(ProjectConfigurationPlatforms) = postSolution
+        {B3E6A9E8-1C2A-4E3F-9A5A-8AE5F1E2C6D0}.Debug|x64.ActiveCfg = Debug|x64
+        {B3E6A9E8-1C2A-4E3F-9A5A-8AE5F1E2C6D0}.Debug|x64.Build.0 = Debug|x64
+        {B3E6A9E8-1C2A-4E3F-9A5A-8AE5F1E2C6D0}.Release|x64.ActiveCfg = Release|x64
+        {B3E6A9E8-1C2A-4E3F-9A5A-8AE5F1E2C6D0}.Release|x64.Build.0 = Release|x64
+    EndGlobalSection
+    GlobalSection(SolutionProperties) = preSolution
+        HideSolutionNode = FALSE
+    EndGlobalSection
+EndGlobal

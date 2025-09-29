@@ -59,64 +59,93 @@ private:
     std::map<std::string, IDirectInputEffect*> m_Effects;
     std::vector<std::string> m_EffectNames;
     int m_CurrentEffectIndex;
+    // Indique si un effet est en cours de lecture
     bool m_bEffectPlaying;
-    
-    // Thread de mise à jour
+
+    // Thread dédié à la mise à jour de l'état du périphérique
     std::thread m_UpdateThread;
+    // Indique si la boucle principale est active
     bool m_bRunning;
-    
-    // Paramètres d'effet ajustables
+
+    // Intensité actuelle de la force appliquée
     LONG m_ForceIntensity;
+    // Durée de l'effet courant (en ms)
     DWORD m_EffectDuration;
+    // Direction de l'effet courant
     LONG m_EffectDirection;
-    
-public:
-    ForceEffectSimulator();
-    ~ForceEffectSimulator();
-    
-    bool Initialize();
-    void Shutdown();
-    void Run();
-    
-private:
-    // Initialisation
-    bool InitializeDirectInput();
-    bool FindAndInitDevice();
-    bool SetupCooperativeLevel(HWND hwnd);
-    bool SetupDataFormat();
-    bool SetupForceFeedback();
-    
-    // Gestion des effets
-    bool CreateAllEffects();
-    bool CreateConstantEffect(const std::string& name, LONG force, LONG direction = 0);
-    bool CreatePeriodicEffect(const std::string& name, const GUID& effectType, 
-                            DWORD magnitude, DWORD period, DWORD phase = 0);
-    bool CreateRampEffect(const std::string& name, LONG startForce, LONG endForce);
-    bool CreateConditionEffect(const std::string& name, const GUID& effectType,
-                             LONG coefficient, LONG saturation);
-    
-    // Contrôle des effets
-    void PlayCurrentEffect();
-    void StopCurrentEffect();
-    void StopAllEffects();
-    void NextEffect();
-    void PreviousEffect();
-    void AdjustIntensity(int delta);
-    void AdjustDirection(int delta);
-    void AdjustDuration(int delta);
-    
-    // Mise à jour et affichage
-    void UpdateLoop();
-    void UpdateDeviceState();
-    void DisplayStatus();
-    void DisplayHelp();
-    
-    // Utilitaires
-    static std::string FormatForce(LONG force);
-    static std::string FormatDirection(LONG direction);
-    static std::string FormatDuration(DWORD duration);
-    void CleanupEffects();
-    
+
+    public:
+        /**
+         * Constructeur : initialise les membres et prépare le simulateur.
+         */
+        ForceEffectSimulator();
+        /**
+         * Destructeur : libère les ressources et arrête le simulateur.
+         */
+        ~ForceEffectSimulator();
+
+        /**
+         * Initialise le simulateur (DirectInput, périphérique, effets).
+         * @return true si succès.
+         */
+        bool Initialize();
+        /**
+         * Arrête et nettoie le simulateur.
+         */
+        void Shutdown();
+        /**
+         * Lance la boucle principale et l'interface utilisateur.
+         */
+        void Run();
+
+    private:
+        // Initialise DirectInput
+        bool InitializeDirectInput();
+        // Trouve et initialise le périphérique Sidewinder
+        bool FindAndInitDevice();
+        // Définit le niveau coopératif du périphérique
+        bool SetupCooperativeLevel(HWND hwnd);
+        // Configure le format de données du périphérique
+        bool SetupDataFormat();
+        // Configure les capacités force feedback
+        bool SetupForceFeedback();
+
+        // Crée tous les effets supportés
+        bool CreateAllEffects();
+        // Crée un effet constant
+        bool CreateConstantEffect(const std::string& name, LONG force, LONG direction = 0);
+        // Crée un effet périodique
+        bool CreatePeriodicEffect(const std::string& name, const GUID& effectType, 
+                                DWORD magnitude, DWORD period, DWORD phase = 0);
+        // Crée un effet rampe
+        bool CreateRampEffect(const std::string& name, LONG startForce, LONG endForce);
+        // Crée un effet de condition
+        bool CreateConditionEffect(const std::string& name, const GUID& effectType,
+                                 LONG coefficient, LONG saturation);
+
+        // Joue l'effet courant
+        void PlayCurrentEffect();
+        // Arrête l'effet courant
+        void StopCurrentEffect();
+        void StopAllEffects();
+        void NextEffect();
+        void PreviousEffect();
+        void AdjustIntensity(int delta);
+        void AdjustDirection(int delta);
+        void AdjustDuration(int delta);
+
+        // Mise à jour et affichage
+        void UpdateLoop();
+        void UpdateDeviceState();
+        void DisplayStatus();
+        void DisplayHelp();
+
+        // Utilitaires
+        static std::string FormatForce(LONG force);
+        static std::string FormatDirection(LONG direction);
+        static std::string FormatDuration(DWORD duration);
+        void CleanupEffects();
+
     // Callback pour énumération des périphériques
     static BOOL CALLBACK EnumJoysticksCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext);
     
@@ -128,6 +157,9 @@ private:
 // IMPLÉMENTATION
 //==============================================================================
 
+/**
+ * Constructeur : Initialise les membres et l'état du simulateur.
+ */
 ForceEffectSimulator::ForceEffectSimulator()
     : m_pDI(nullptr)
     , m_pDevice(nullptr)
@@ -143,11 +175,18 @@ ForceEffectSimulator::ForceEffectSimulator()
     ZeroMemory(&m_JoyState, sizeof(m_JoyState));
 }
 
+/**
+ * Destructeur : Libère les ressources et arrête le simulateur proprement.
+ */
 ForceEffectSimulator::~ForceEffectSimulator()
 {
     Shutdown();
 }
 
+/**
+ * Initialise DirectInput, détecte le périphérique Sidewinder, crée les effets et prépare le simulateur.
+ * @return true si l'initialisation est réussie, false sinon.
+ */
 bool ForceEffectSimulator::Initialize()
 {
     std::cout << "=== Simulateur Force Feedback DirectInput ===" << std::endl;
@@ -177,6 +216,10 @@ bool ForceEffectSimulator::Initialize()
     return true;
 }
 
+/**
+ * Initialise l'interface DirectInput principale.
+ * @return true si succès, false sinon.
+ */
 bool ForceEffectSimulator::InitializeDirectInput()
 {
     HRESULT hr = DirectInput8Create(GetModuleHandle(nullptr),
@@ -194,6 +237,9 @@ bool ForceEffectSimulator::InitializeDirectInput()
     return true;
 }
 
+/**
+ * Callback d'énumération des joysticks : sélectionne le Sidewinder via VID/PID.
+ */
 BOOL CALLBACK ForceEffectSimulator::EnumJoysticksCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext)
 {
     ForceEffectSimulator* pThis = static_cast<ForceEffectSimulator*>(pContext);
@@ -243,6 +289,10 @@ BOOL CALLBACK ForceEffectSimulator::EnumJoysticksCallback(const DIDEVICEINSTANCE
     return DIENUM_CONTINUE;
 }
 
+/**
+ * Trouve et initialise le périphérique Sidewinder, configure le format, le niveau coopératif et le force feedback.
+ * @return true si le périphérique est prêt, false sinon.
+ */
 bool ForceEffectSimulator::FindAndInitDevice()
 {
     // Énumération des joysticks force feedback
@@ -293,6 +343,10 @@ bool ForceEffectSimulator::FindAndInitDevice()
     return true;
 }
 
+/**
+ * Configure le format de données du périphérique pour DirectInput.
+ * @return true si succès, false sinon.
+ */
 bool ForceEffectSimulator::SetupDataFormat()
 {
     HRESULT hr = m_pDevice->SetDataFormat(&c_dfDIJoystick2);
@@ -304,6 +358,11 @@ bool ForceEffectSimulator::SetupDataFormat()
     return true;
 }
 
+/**
+ * Définit le niveau coopératif du périphérique (exclusif/background).
+ * @param hwnd Fenêtre cible.
+ * @return true si succès, false sinon.
+ */
 bool ForceEffectSimulator::SetupCooperativeLevel(HWND hwnd)
 {
     // DISCL_EXCLUSIVE nécessaire pour force feedback
@@ -317,6 +376,9 @@ bool ForceEffectSimulator::SetupCooperativeLevel(HWND hwnd)
     return true;
 }
 
+/**
+ * Callback d'énumération des objets du périphérique : configure les axes pour le force feedback.
+ */
 BOOL CALLBACK ForceEffectSimulator::EnumObjectsCallback(const DIDEVICEOBJECTINSTANCE* pdidoi, VOID* pContext)
 {
     ForceEffectSimulator* pThis = static_cast<ForceEffectSimulator*>(pContext);
@@ -348,6 +410,10 @@ BOOL CALLBACK ForceEffectSimulator::EnumObjectsCallback(const DIDEVICEOBJECTINST
     return DIENUM_CONTINUE;
 }
 
+/**
+ * Configure les capacités force feedback du périphérique (autocenter, gain).
+ * @return true si succès, false sinon.
+ */
 bool ForceEffectSimulator::SetupForceFeedback()
 {
     // Vérification des capacités force feedback
@@ -390,6 +456,10 @@ bool ForceEffectSimulator::SetupForceFeedback()
     return true;
 }
 
+/**
+ * Crée tous les effets de force feedback supportés et les ajoute à la map d'effets.
+ * @return true si au moins un effet est créé.
+ */
 bool ForceEffectSimulator::CreateAllEffects()
 {
     std::cout << "Création des effets..." << std::endl;
@@ -429,6 +499,13 @@ bool ForceEffectSimulator::CreateAllEffects()
     return success && !m_Effects.empty();
 }
 
+/**
+ * Crée un effet constant (force continue) avec nom, force et direction.
+ * @param name Nom de l'effet.
+ * @param force Intensité de la force.
+ * @param direction Direction (cartésienne).
+ * @return true si succès.
+ */
 bool ForceEffectSimulator::CreateConstantEffect(const std::string& name, LONG force, LONG direction)
 {
     DIEFFECT eff;
@@ -476,6 +553,15 @@ bool ForceEffectSimulator::CreateConstantEffect(const std::string& name, LONG fo
     }
 }
 
+/**
+ * Crée un effet périodique (sinus, carré, etc.) avec magnitude, période et phase.
+ * @param name Nom de l'effet.
+ * @param effectType Type GUID de l'effet.
+ * @param magnitude Intensité.
+ * @param period Période.
+ * @param phase Phase initiale.
+ * @return true si succès.
+ */
 bool ForceEffectSimulator::CreatePeriodicEffect(const std::string& name, const GUID& effectType, 
                                                DWORD magnitude, DWORD period, DWORD phase)
 {
@@ -524,6 +610,13 @@ bool ForceEffectSimulator::CreatePeriodicEffect(const std::string& name, const G
     }
 }
 
+/**
+ * Crée un effet rampe (force croissante/décroissante).
+ * @param name Nom de l'effet.
+ * @param startForce Force initiale.
+ * @param endForce Force finale.
+ * @return true si succès.
+ */
 bool ForceEffectSimulator::CreateRampEffect(const std::string& name, LONG startForce, LONG endForce)
 {
     DIEFFECT eff;
@@ -568,6 +661,14 @@ bool ForceEffectSimulator::CreateRampEffect(const std::string& name, LONG startF
     }
 }
 
+/**
+ * Crée un effet de condition (ressort, amortissement, etc.).
+ * @param name Nom de l'effet.
+ * @param effectType Type GUID.
+ * @param coefficient Coefficient de résistance.
+ * @param saturation Saturation maximale.
+ * @return true si succès.
+ */
 bool ForceEffectSimulator::CreateConditionEffect(const std::string& name, const GUID& effectType,
                                                 LONG coefficient, LONG saturation)
 {
@@ -618,6 +719,9 @@ bool ForceEffectSimulator::CreateConditionEffect(const std::string& name, const 
     }
 }
 
+/**
+ * Boucle principale du simulateur : gère l'UI console, les entrées clavier et le thread de mise à jour.
+ */
 void ForceEffectSimulator::Run()
 {
     if (m_Effects.empty())
@@ -757,6 +861,9 @@ void ForceEffectSimulator::Run()
     }
 }
 
+/**
+ * Thread de mise à jour : actualise l'état du périphérique à intervalle régulier.
+ */
 void ForceEffectSimulator::UpdateLoop()
 {
     while (m_bRunning)
@@ -766,6 +873,9 @@ void ForceEffectSimulator::UpdateLoop()
     }
 }
 
+/**
+ * Met à jour l'état du périphérique (acquisition, polling, lecture des axes/boutons).
+ */
 void ForceEffectSimulator::UpdateDeviceState()
 {
     if (!m_pDevice) return;
@@ -803,6 +913,9 @@ void ForceEffectSimulator::UpdateDeviceState()
     }
 }
 
+/**
+ * Joue l'effet courant sélectionné, gère les erreurs et diagnostics.
+ */
 void ForceEffectSimulator::PlayCurrentEffect()
 {
     if (m_EffectNames.empty()) return;
@@ -868,6 +981,9 @@ void ForceEffectSimulator::PlayCurrentEffect()
     }
 }
 
+/**
+ * Arrête l'effet courant sélectionné.
+ */
 void ForceEffectSimulator::StopCurrentEffect()
 {
     if (m_EffectNames.empty()) return;

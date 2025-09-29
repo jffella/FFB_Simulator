@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B3E6A9E8-1C2A-4E3F-9A5A-8AE5F1E2C6D0}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>FFB_Simulator</RootNamespace>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <CharacterSet>MultiByte</CharacterSet>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+
+  <!-- Includes and libs d'après ta ligne -->
+  <PropertyGroup>
+    <!-- Remplace si tu veux des chemins relatifs -->
+    <AdditionalIncludeDirectories>D:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include;D:\Program Files\Windows Kits\10\Include\10.0.26100.0\um;D:\Program Files\Windows Kits\10\Include\10.0.26100.0\shared;D:\Program Files\Windows Kits\10\Include\10.0.26100.0\winrt;D:\Program Files\Windows Kits\10\Include\10.0.26100.0\ucrt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+
+    <AdditionalLibraryDirectories>D:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\lib\x64;D:\Program Files\Windows Kits\10\Lib\10.0.26100.0\um\x64;D:\Program Files\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+
+    <!-- La variable FBB_LIB peut être définie dans l'environnement (ex: set FBB_LIB=maLib.lib) ou remplacée ici -->
+    <ProjectLinkerAdditionalDependencies>$(FBB_LIB);dinput8.lib;dxguid.lib;user32.lib;kernel32.lib;%(ProjectLinkerAdditionalDependencies)</ProjectLinkerAdditionalDependencies>
+
+    <ClCompileLanguageStandard>stdc++17</ClCompileLanguageStandard>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ClCompile Include="FFB_Simulator.cpp" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Options de compilation -->
+    <ClCompile>
+      <ExceptionHandling>SyncCpp</ExceptionHandling>  <!-- /EHsc -->
+      <Optimization>MaxSpeed</Optimization>            <!-- /O2 -->
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary> <!-- /MD -->
+      <LanguageStandard>stdc++17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(ProjectLinkerAdditionalDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <OutputFile>$(OutDir)FFB_Simulator.exe</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(ProjectLinkerAdditionalDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OutputFile>$(OutDir)FFB_Simulator.exe</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
