@@ -68,7 +68,7 @@
         "xtree": "cpp",
         "xutility": "cpp"
     },
-    "C_Cpp.errorSquiggles": "Enabled",
-    "C_Cpp.intelliSenseEngine": "Default",
+    "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.intelliSenseEngine": "default",
     "C_Cpp.formatting": "vcFormat"
 }

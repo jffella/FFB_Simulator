@@ -4,6 +4,8 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
+                "D:/Program Files/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/include",
+                "D:/Program Files/Windows Kits/10/Include/*/um",
                 "D:/Program Files/Windows Kits/10/Include/*/um",
                 "D:/Program Files/Windows Kits/10/Include/*/shared",
                 "D:/Program Files/Windows Kits/10/Include/*/winrt",

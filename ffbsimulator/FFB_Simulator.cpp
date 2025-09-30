@@ -17,6 +17,10 @@
 #include <chrono>
 #include <conio.h>
 #include <memory>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <ctime>
 
 #pragma comment(lib, "dinput8.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -36,6 +40,116 @@ const DWORD INFINITE_DURATION = INFINITE;
 
 // Refresh rate
 const DWORD UPDATE_INTERVAL = 16;      // ~60 FPS
+
+//==============================================================================
+// CLASSE DE LOGGING
+//==============================================================================
+
+class Logger
+{
+private:
+    std::ofstream m_LogFile;
+    std::string m_LogFilename;
+    bool m_IsOpen;
+    
+    std::string GetTimestamp()
+    {
+        auto now = std::chrono::system_clock::now();
+        auto time_t_now = std::chrono::system_clock::to_time_t(now);
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()) % 1000;
+        
+        struct tm timeinfo;
+        localtime_s(&timeinfo, &time_t_now);
+        
+        std::ostringstream oss;
+        oss << std::put_time(&timeinfo, "%Y-%m-%d %H:%M:%S")
+            << '.' << std::setfill('0') << std::setw(3) << ms.count();
+        return oss.str();
+    }
+    
+public:
+    Logger() : m_IsOpen(false) {}
+    
+    ~Logger()
+    {
+        Close();
+    }
+    
+    bool Open(const std::string& filename)
+    {
+        m_LogFilename = filename;
+        m_LogFile.open(filename, std::ios::out | std::ios::app);
+        m_IsOpen = m_LogFile.is_open();
+        
+        if (m_IsOpen)
+        {
+            m_LogFile << "\n========================================\n";
+            m_LogFile << "Session démarrée: " << GetTimestamp() << "\n";
+            m_LogFile << "========================================\n";
+            m_LogFile.flush();
+        }
+        
+        return m_IsOpen;
+    }
+    
+    void Close()
+    {
+        if (m_IsOpen)
+        {
+            m_LogFile << "========================================\n";
+            m_LogFile << "Session terminée: " << GetTimestamp() << "\n";
+            m_LogFile << "========================================\n\n";
+            m_LogFile.close();
+            m_IsOpen = false;
+        }
+    }
+    
+    void Log(const std::string& level, const std::string& message)
+    {
+        std::string fullMessage = "[" + GetTimestamp() + "] [" + level + "] " + message;
+        
+        // Affichage console
+        std::cout << fullMessage << std::endl;
+        
+        // Écriture fichier
+        if (m_IsOpen)
+        {
+            m_LogFile << fullMessage << std::endl;
+            m_LogFile.flush();
+        }
+    }
+    
+    void Info(const std::string& message)
+    {
+        Log("INFO", message);
+    }
+    
+    void Warning(const std::string& message)
+    {
+        Log("WARN", message);
+    }
+    
+    void Error(const std::string& message)
+    {
+        Log("ERROR", message);
+    }
+    
+    void Debug(const std::string& message)
+    {
+        Log("DEBUG", message);
+    }
+    
+    void Success(const std::string& message)
+    {
+        Log("OK", message);
+    }
+    
+    std::string GetFilename() const { return m_LogFilename; }
+};
+
+// Instance globale du logger
+static Logger g_Logger;
 
 //==============================================================================
 // CLASSE PRINCIPALE
@@ -59,93 +173,69 @@ private:
     std::map<std::string, IDirectInputEffect*> m_Effects;
     std::vector<std::string> m_EffectNames;
     int m_CurrentEffectIndex;
-    // Indique si un effet est en cours de lecture
     bool m_bEffectPlaying;
-
-    // Thread dédié à la mise à jour de l'état du périphérique
+    
+    // Thread de mise à jour
     std::thread m_UpdateThread;
     // Indique si la boucle principale est active
     bool m_bRunning;
-
-    // Intensité actuelle de la force appliquée
+    
+    // Paramètres d'effet ajustables
     LONG m_ForceIntensity;
-    // Durée de l'effet courant (en ms)
     DWORD m_EffectDuration;
-    // Direction de l'effet courant
     LONG m_EffectDirection;
-
-    public:
-        /**
-         * Constructeur : initialise les membres et prépare le simulateur.
-         */
-        ForceEffectSimulator();
-        /**
-         * Destructeur : libère les ressources et arrête le simulateur.
-         */
-        ~ForceEffectSimulator();
-
-        /**
-         * Initialise le simulateur (DirectInput, périphérique, effets).
-         * @return true si succès.
-         */
-        bool Initialize();
-        /**
-         * Arrête et nettoie le simulateur.
-         */
-        void Shutdown();
-        /**
-         * Lance la boucle principale et l'interface utilisateur.
-         */
-        void Run();
-
-    private:
-        // Initialise DirectInput
-        bool InitializeDirectInput();
-        // Trouve et initialise le périphérique Sidewinder
-        bool FindAndInitDevice();
-        // Définit le niveau coopératif du périphérique
-        bool SetupCooperativeLevel(HWND hwnd);
-        // Configure le format de données du périphérique
-        bool SetupDataFormat();
-        // Configure les capacités force feedback
-        bool SetupForceFeedback();
-
-        // Crée tous les effets supportés
-        bool CreateAllEffects();
-        // Crée un effet constant
-        bool CreateConstantEffect(const std::string& name, LONG force, LONG direction = 0);
-        // Crée un effet périodique
-        bool CreatePeriodicEffect(const std::string& name, const GUID& effectType, 
-                                DWORD magnitude, DWORD period, DWORD phase = 0);
-        // Crée un effet rampe
-        bool CreateRampEffect(const std::string& name, LONG startForce, LONG endForce);
-        // Crée un effet de condition
-        bool CreateConditionEffect(const std::string& name, const GUID& effectType,
-                                 LONG coefficient, LONG saturation);
-
-        // Joue l'effet courant
-        void PlayCurrentEffect();
-        // Arrête l'effet courant
-        void StopCurrentEffect();
-        void StopAllEffects();
-        void NextEffect();
-        void PreviousEffect();
-        void AdjustIntensity(int delta);
-        void AdjustDirection(int delta);
-        void AdjustDuration(int delta);
-
-        // Mise à jour et affichage
-        void UpdateLoop();
-        void UpdateDeviceState();
-        void DisplayStatus();
-        void DisplayHelp();
-
-        // Utilitaires
-        static std::string FormatForce(LONG force);
-        static std::string FormatDirection(LONG direction);
-        static std::string FormatDuration(DWORD duration);
-        void CleanupEffects();
-
+    
+public:
+    ForceEffectSimulator();
+    ~ForceEffectSimulator();
+    
+    /**
+     * Initialise le simulateur (DirectInput, périphérique, effets).
+     * @return true si succès.
+     */
+    bool Initialize();
+    void Shutdown();
+    void Run();
+    
+private:
+    // Initialisation
+    bool InitializeDirectInput();
+    bool FindAndInitDevice();
+    bool SetupCooperativeLevel(HWND hwnd);
+    bool SetupDataFormat();
+    bool SetupForceFeedback();
+    
+    // Gestion des effets
+    bool CreateAllEffects();
+    bool CreateConstantEffect(const std::string& name, LONG force, LONG direction = 0);
+    bool CreatePeriodicEffect(const std::string& name, const GUID& effectType, 
+                            DWORD magnitude, DWORD period, DWORD phase = 0);
+    bool CreateRampEffect(const std::string& name, LONG startForce, LONG endForce);
+    bool CreateConditionEffect(const std::string& name, const GUID& effectType,
+                             LONG coefficient, LONG saturation);
+    
+    // Contrôle des effets
+    void PlayCurrentEffect();
+    void StopCurrentEffect();
+    void StopAllEffects();
+    void NextEffect();
+    void PreviousEffect();
+    void AdjustIntensity(int delta);
+    void AdjustDirection(int delta);
+    void AdjustDuration(int delta);
+    
+    // Mise à jour et affichage
+    void UpdateLoop();
+    void UpdateDeviceState();
+    void DisplayStatus();
+    void DisplayHelp();
+    
+    // Utilitaires
+    static std::string FormatForce(LONG force);
+    static std::string FormatDirection(LONG direction);
+    static std::string FormatDuration(DWORD duration);
+    void CleanupEffects();
+    
     // Callback pour énumération des périphériques
     static BOOL CALLBACK EnumJoysticksCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext);
     
@@ -157,9 +247,6 @@ private:
 // IMPLÉMENTATION
 //==============================================================================
 
-/**
- * Constructeur : Initialise les membres et l'état du simulateur.
- */
 ForceEffectSimulator::ForceEffectSimulator()
     : m_pDI(nullptr)
     , m_pDevice(nullptr)
@@ -175,51 +262,40 @@ ForceEffectSimulator::ForceEffectSimulator()
     ZeroMemory(&m_JoyState, sizeof(m_JoyState));
 }
 
-/**
- * Destructeur : Libère les ressources et arrête le simulateur proprement.
- */
 ForceEffectSimulator::~ForceEffectSimulator()
 {
     Shutdown();
 }
 
-/**
- * Initialise DirectInput, détecte le périphérique Sidewinder, crée les effets et prépare le simulateur.
- * @return true si l'initialisation est réussie, false sinon.
- */
 bool ForceEffectSimulator::Initialize()
 {
-    std::cout << "=== Simulateur Force Feedback DirectInput ===" << std::endl;
-    std::cout << "Initialisation..." << std::endl;
+    g_Logger.Info("=== Simulateur Force Feedback DirectInput ===");
+    g_Logger.Info("Initialisation...");
     
     if (!InitializeDirectInput())
     {
-        std::cerr << "Erreur: Impossible d'initialiser DirectInput" << std::endl;
+        g_Logger.Error("Impossible d'initialiser DirectInput");
         return false;
     }
     
     if (!FindAndInitDevice())
     {
-        std::cerr << "Erreur: Impossible de trouver le volant Sidewinder" << std::endl;
+        g_Logger.Error("Impossible de trouver le volant Sidewinder");
         return false;
     }
     
     if (!CreateAllEffects())
     {
-        std::cerr << "Erreur: Impossible de créer les effets force feedback" << std::endl;
+        g_Logger.Error("Impossible de créer les effets force feedback");
         return false;
     }
     
-    std::cout << "Initialisation terminée avec succès!" << std::endl;
-    std::cout << "Effets disponibles: " << m_Effects.size() << std::endl;
+    g_Logger.Success("Initialisation terminée avec succès!");
+    g_Logger.Info("Effets disponibles: " + std::to_string(m_Effects.size()));
     
     return true;
 }
 
-/**
- * Initialise l'interface DirectInput principale.
- * @return true si succès, false sinon.
- */
 bool ForceEffectSimulator::InitializeDirectInput()
 {
     HRESULT hr = DirectInput8Create(GetModuleHandle(nullptr),
@@ -230,16 +306,15 @@ bool ForceEffectSimulator::InitializeDirectInput()
     
     if (FAILED(hr))
     {
-        std::cerr << "DirectInput8Create failed: " << std::hex << hr << std::endl;
+        std::ostringstream oss;
+        oss << "DirectInput8Create failed: 0x" << std::hex << hr;
+        g_Logger.Error(oss.str());
         return false;
     }
     
     return true;
 }
 
-/**
- * Callback d'énumération des joysticks : sélectionne le Sidewinder via VID/PID.
- */
 BOOL CALLBACK ForceEffectSimulator::EnumJoysticksCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext)
 {
     ForceEffectSimulator* pThis = static_cast<ForceEffectSimulator*>(pContext);
@@ -265,12 +340,14 @@ BOOL CALLBACK ForceEffectSimulator::EnumJoysticksCallback(const DIDEVICEINSTANCE
             WORD vid = LOWORD(dipProp.dwData);
             WORD pid = HIWORD(dipProp.dwData);
             
-            std::cout << "Device trouvé: " << pdidInstance->tszProductName 
-                      << " (VID: 0x" << std::hex << vid << ", PID: 0x" << pid << ")" << std::dec << std::endl;
+            std::ostringstream oss;
+            oss << "Device trouvé: " << pdidInstance->tszProductName 
+                << " (VID: 0x" << std::hex << vid << ", PID: 0x" << pid << ")";
+            g_Logger.Debug(oss.str());
             
             if (vid == SIDEWINDER_VID && pid == SIDEWINDER_PID)
             {
-                std::cout << "Microsoft Sidewinder Force Feedback Wheel détecté!" << std::endl;
+                g_Logger.Success("Microsoft Sidewinder Force Feedback Wheel détecté!");
                 
                 // Gardons ce device
                 pThis->m_pDevice = pTempDevice;
@@ -289,10 +366,6 @@ BOOL CALLBACK ForceEffectSimulator::EnumJoysticksCallback(const DIDEVICEINSTANCE
     return DIENUM_CONTINUE;
 }
 
-/**
- * Trouve et initialise le périphérique Sidewinder, configure le format, le niveau coopératif et le force feedback.
- * @return true si le périphérique est prêt, false sinon.
- */
 bool ForceEffectSimulator::FindAndInitDevice()
 {
     // Énumération des joysticks force feedback
@@ -303,7 +376,7 @@ bool ForceEffectSimulator::FindAndInitDevice()
     
     if (FAILED(hr) || !m_pDevice)
     {
-        std::cerr << "Aucun volant Sidewinder trouvé ou erreur d'énumération" << std::endl;
+        g_Logger.Error("Aucun volant Sidewinder trouvé ou erreur d'énumération");
         return false;
     }
     
@@ -333,36 +406,29 @@ bool ForceEffectSimulator::FindAndInitDevice()
     if (SUCCEEDED(hr))
     {
         m_bDeviceAcquired = true;
-        std::cout << "Device acquis avec succès" << std::endl;
+        g_Logger.Success("Device acquis avec succès");
     }
     else
     {
-        std::cout << "Attention: Device non acquis (sera tenté plus tard)" << std::endl;
+        g_Logger.Warning("Device non acquis (sera tenté plus tard)");
     }
     
     return true;
 }
 
-/**
- * Configure le format de données du périphérique pour DirectInput.
- * @return true si succès, false sinon.
- */
 bool ForceEffectSimulator::SetupDataFormat()
 {
     HRESULT hr = m_pDevice->SetDataFormat(&c_dfDIJoystick2);
     if (FAILED(hr))
     {
-        std::cerr << "SetDataFormat failed: " << std::hex << hr << std::endl;
+        std::ostringstream oss;
+        oss << "SetDataFormat failed: 0x" << std::hex << hr;
+        g_Logger.Error(oss.str());
         return false;
     }
     return true;
 }
 
-/**
- * Définit le niveau coopératif du périphérique (exclusif/background).
- * @param hwnd Fenêtre cible.
- * @return true si succès, false sinon.
- */
 bool ForceEffectSimulator::SetupCooperativeLevel(HWND hwnd)
 {
     // DISCL_EXCLUSIVE nécessaire pour force feedback
@@ -370,25 +436,25 @@ bool ForceEffectSimulator::SetupCooperativeLevel(HWND hwnd)
     HRESULT hr = m_pDevice->SetCooperativeLevel(hwnd, DISCL_EXCLUSIVE | DISCL_BACKGROUND);
     if (FAILED(hr))
     {
-        std::cerr << "SetCooperativeLevel failed: " << std::hex << hr << std::endl;
+        std::ostringstream oss;
+        oss << "SetCooperativeLevel failed: 0x" << std::hex << hr;
+        g_Logger.Error(oss.str());
         return false;
     }
     return true;
 }
 
-/**
- * Callback d'énumération des objets du périphérique : configure les axes pour le force feedback.
- */
 BOOL CALLBACK ForceEffectSimulator::EnumObjectsCallback(const DIDEVICEOBJECTINSTANCE* pdidoi, VOID* pContext)
 {
     ForceEffectSimulator* pThis = static_cast<ForceEffectSimulator*>(pContext);
     
-    std::cout << "Objet: " << pdidoi->tszName << " (Type: 0x" << std::hex << pdidoi->dwType << ")" << std::dec;
+    std::ostringstream oss;
+    oss << "Objet: " << pdidoi->tszName << " (Type: 0x" << std::hex << pdidoi->dwType << ")";
     
     // Configuration des axes force feedback
     if (pdidoi->dwFlags & DIDOI_FFACTUATOR)
     {
-        std::cout << " [Force Feedback]";
+        oss << " [Force Feedback]";
         
         // Configuration de la plage de l'axe pour force feedback
         DIPROPRANGE diprg;
@@ -402,18 +468,14 @@ BOOL CALLBACK ForceEffectSimulator::EnumObjectsCallback(const DIDEVICEOBJECTINST
         HRESULT hr = pThis->m_pDevice->SetProperty(DIPROP_RANGE, &diprg.diph);
         if (FAILED(hr))
         {
-            std::cout << " (Erreur config range)";
+            oss << " (Erreur config range)";
         }
     }
     
-    std::cout << std::endl;
+    g_Logger.Debug(oss.str());
     return DIENUM_CONTINUE;
 }
 
-/**
- * Configure les capacités force feedback du périphérique (autocenter, gain).
- * @return true si succès, false sinon.
- */
 bool ForceEffectSimulator::SetupForceFeedback()
 {
     // Vérification des capacités force feedback
@@ -423,13 +485,14 @@ bool ForceEffectSimulator::SetupForceFeedback()
     HRESULT hr = m_pDevice->GetCapabilities(&caps);
     if (FAILED(hr))
     {
-        std::cerr << "GetCapabilities failed" << std::endl;
+        g_Logger.Error("GetCapabilities failed");
         return false;
     }
     
-    std::cout << "Capacités Force Feedback:" << std::endl;
-    std::cout << "  Axes FF: " << caps.dwAxes << std::endl;
-    std::cout << "  Effets simultanés: " << caps.dwFFDriverVersion << std::endl;
+    std::ostringstream oss;
+    oss << "Capacités Force Feedback: Axes=" << caps.dwAxes 
+        << ", FFDriverVersion=" << caps.dwFFDriverVersion;
+    g_Logger.Info(oss.str());
     
     // Activation de l'autocenter (important pour le volant)
     DIPROPDWORD dipProp;
@@ -442,7 +505,11 @@ bool ForceEffectSimulator::SetupForceFeedback()
     hr = m_pDevice->SetProperty(DIPROP_AUTOCENTER, &dipProp.diph);
     if (FAILED(hr))
     {
-        std::cout << "Attention: Impossible d'activer l'autocenter" << std::endl;
+        g_Logger.Warning("Impossible d'activer l'autocenter");
+    }
+    else
+    {
+        g_Logger.Info("Autocenter activé");
     }
     
     // Configuration du gain général
@@ -450,19 +517,19 @@ bool ForceEffectSimulator::SetupForceFeedback()
     hr = m_pDevice->SetProperty(DIPROP_FFGAIN, &dipProp.diph);
     if (FAILED(hr))
     {
-        std::cout << "Attention: Impossible de configurer le gain" << std::endl;
+        g_Logger.Warning("Impossible de configurer le gain");
+    }
+    else
+    {
+        g_Logger.Info("Gain configuré au maximum");
     }
     
     return true;
 }
 
-/**
- * Crée tous les effets de force feedback supportés et les ajoute à la map d'effets.
- * @return true si au moins un effet est créé.
- */
 bool ForceEffectSimulator::CreateAllEffects()
 {
-    std::cout << "Création des effets..." << std::endl;
+    g_Logger.Info("Création des effets...");
     
     bool success = true;
     
@@ -488,7 +555,7 @@ bool ForceEffectSimulator::CreateAllEffects()
     success &= CreateConditionEffect("Inertie", GUID_Inertia, 6000, MAX_FORCE);
     success &= CreateConditionEffect("Friction", GUID_Friction, 5000, MAX_FORCE);
     
-    std::cout << "Effets créés: " << m_Effects.size() << std::endl;
+    g_Logger.Info("Effets créés: " + std::to_string(m_Effects.size()));
     
     // Construction de la liste des noms pour navigation
     for (const auto& pair : m_Effects)
@@ -499,13 +566,6 @@ bool ForceEffectSimulator::CreateAllEffects()
     return success && !m_Effects.empty();
 }
 
-/**
- * Crée un effet constant (force continue) avec nom, force et direction.
- * @param name Nom de l'effet.
- * @param force Intensité de la force.
- * @param direction Direction (cartésienne).
- * @return true si succès.
- */
 bool ForceEffectSimulator::CreateConstantEffect(const std::string& name, LONG force, LONG direction)
 {
     DIEFFECT eff;
@@ -543,25 +603,18 @@ bool ForceEffectSimulator::CreateConstantEffect(const std::string& name, LONG fo
     if (SUCCEEDED(hr))
     {
         m_Effects[name] = pEffect;
-        std::cout << "  Effet constant créé: " << name << " (Force: " << force << ")" << std::endl;
+        g_Logger.Info("  Effet constant créé: " + name + " (Force: " + std::to_string(force) + ")");
         return true;
     }
     else
     {
-        std::cerr << "  Erreur création effet constant " << name << ": " << std::hex << hr << std::endl;
+        std::ostringstream oss;
+        oss << "  Erreur création effet constant " << name << ": 0x" << std::hex << hr;
+        g_Logger.Error(oss.str());
         return false;
     }
 }
 
-/**
- * Crée un effet périodique (sinus, carré, etc.) avec magnitude, période et phase.
- * @param name Nom de l'effet.
- * @param effectType Type GUID de l'effet.
- * @param magnitude Intensité.
- * @param period Période.
- * @param phase Phase initiale.
- * @return true si succès.
- */
 bool ForceEffectSimulator::CreatePeriodicEffect(const std::string& name, const GUID& effectType, 
                                                DWORD magnitude, DWORD period, DWORD phase)
 {
@@ -600,23 +653,21 @@ bool ForceEffectSimulator::CreatePeriodicEffect(const std::string& name, const G
     if (SUCCEEDED(hr))
     {
         m_Effects[name] = pEffect;
-        std::cout << "  Effet périodique créé: " << name << " (Magnitude: " << magnitude << ", Période: " << period << "ms)" << std::endl;
+        std::ostringstream oss;
+        oss << "  Effet périodique créé: " << name 
+            << " (Magnitude: " << magnitude << ", Période: " << period << "ms)";
+        g_Logger.Info(oss.str());
         return true;
     }
     else
     {
-        std::cerr << "  Erreur création effet périodique " << name << ": " << std::hex << hr << std::endl;
+        std::ostringstream oss;
+        oss << "  Erreur création effet périodique " << name << ": 0x" << std::hex << hr;
+        g_Logger.Error(oss.str());
         return false;
     }
 }
 
-/**
- * Crée un effet rampe (force croissante/décroissante).
- * @param name Nom de l'effet.
- * @param startForce Force initiale.
- * @param endForce Force finale.
- * @return true si succès.
- */
 bool ForceEffectSimulator::CreateRampEffect(const std::string& name, LONG startForce, LONG endForce)
 {
     DIEFFECT eff;
@@ -651,12 +702,17 @@ bool ForceEffectSimulator::CreateRampEffect(const std::string& name, LONG startF
     if (SUCCEEDED(hr))
     {
         m_Effects[name] = pEffect;
-        std::cout << "  Effet rampe créé: " << name << " (" << startForce << " -> " << endForce << ")" << std::endl;
+        std::ostringstream oss;
+        oss << "  Effet rampe créé: " << name 
+            << " (" << startForce << " -> " << endForce << ")";
+        g_Logger.Info(oss.str());
         return true;
     }
     else
     {
-        std::cerr << "  Erreur création effet rampe " << name << ": " << std::hex << hr << std::endl;
+        std::ostringstream oss;
+        oss << "  Erreur création effet rampe " << name << ": 0x" << std::hex << hr;
+        g_Logger.Error(oss.str());
         return false;
     }
 }
@@ -709,12 +765,17 @@ bool ForceEffectSimulator::CreateConditionEffect(const std::string& name, const 
     if (SUCCEEDED(hr))
     {
         m_Effects[name] = pEffect;
-        std::cout << "  Effet condition créé: " << name << " (Coeff: " << coefficient << ", DeadBand: " << conditionParams.lDeadBand << ")" << std::endl;
+        std::ostringstream oss;
+        oss << "  Effet condition créé: " << name 
+            << " (Coeff: " << coefficient << ", DeadBand: " << conditionParams.lDeadBand << ")";
+        g_Logger.Info(oss.str());
         return true;
     }
     else
     {
-        std::cerr << "  Erreur création effet condition " << name << ": " << std::hex << hr << std::endl;
+        std::ostringstream oss;
+        oss << "  Erreur création effet condition " << name << ": 0x" << std::hex << hr;
+        g_Logger.Error(oss.str());
         return false;
     }
 }
@@ -913,9 +974,6 @@ void ForceEffectSimulator::UpdateDeviceState()
     }
 }
 
-/**
- * Joue l'effet courant sélectionné, gère les erreurs et diagnostics.
- */
 void ForceEffectSimulator::PlayCurrentEffect()
 {
     if (m_EffectNames.empty()) return;
@@ -935,45 +993,47 @@ void ForceEffectSimulator::PlayCurrentEffect()
         if (SUCCEEDED(hr))
         {
             m_bEffectPlaying = true;
-            std::cout << "\n>>> EFFET JOUÉ: " << effectName << " <<<" << std::endl;
+            g_Logger.Success(">>> EFFET JOUÉ: " + effectName + " <<<");
             
             // Vérification post-lancement
             it->second->GetEffectStatus(&status);
             if (status & DIEGES_PLAYING)
             {
-                std::cout << "    Status: EN COURS" << std::endl;
+                g_Logger.Debug("    Status: EN COURS");
             }
             else
             {
-                std::cout << "    ATTENTION: Effet lancé mais status indique qu'il ne joue pas!" << std::endl;
+                g_Logger.Warning("    Effet lancé mais status indique qu'il ne joue pas!");
             }
         }
         else
         {
-            std::cerr << "Erreur lors de la lecture de l'effet: 0x" << std::hex << hr << std::dec << std::endl;
+            std::ostringstream oss;
+            oss << "Erreur lors de la lecture de l'effet: 0x" << std::hex << hr;
+            g_Logger.Error(oss.str());
             
             // Tentative de diagnostic
             if (hr == DIERR_NOTEXCLUSIVEACQUIRED)
             {
-                std::cerr << "  -> Device non acquis en mode exclusif" << std::endl;
+                g_Logger.Error("  -> Device non acquis en mode exclusif");
             }
             else if (hr == DIERR_INPUTLOST)
             {
-                std::cerr << "  -> Acquisition du device perdue" << std::endl;
+                g_Logger.Error("  -> Acquisition du device perdue");
             }
             else if (hr == DIERR_NOTDOWNLOADED)
             {
-                std::cerr << "  -> Effet non téléchargé sur le device" << std::endl;
+                g_Logger.Warning("  -> Effet non téléchargé sur le device");
                 // Tentative de download
                 hr = it->second->Download();
                 if (SUCCEEDED(hr))
                 {
-                    std::cout << "  -> Effet téléchargé, nouvel essai..." << std::endl;
+                    g_Logger.Info("  -> Effet téléchargé, nouvel essai...");
                     hr = it->second->Start(1, 0);
                     if (SUCCEEDED(hr))
                     {
                         m_bEffectPlaying = true;
-                        std::cout << "  -> Succès!" << std::endl;
+                        g_Logger.Success("  -> Succès!");
                     }
                 }
             }
@@ -981,9 +1041,6 @@ void ForceEffectSimulator::PlayCurrentEffect()
     }
 }
 
-/**
- * Arrête l'effet courant sélectionné.
- */
 void ForceEffectSimulator::StopCurrentEffect()
 {
     if (m_EffectNames.empty()) return;
@@ -995,7 +1052,7 @@ void ForceEffectSimulator::StopCurrentEffect()
     {
         it->second->Stop();
         m_bEffectPlaying = false;
-        std::cout << "\n>>> EFFET ARRÊTÉ <<<" << std::endl;
+        g_Logger.Info(">>> EFFET ARRÊTÉ <<<");
     }
 }
 
@@ -1291,8 +1348,11 @@ int main()
     
     simulator.Run();
     
-    std::cout << "Arrêt du simulateur..." << std::endl;
+    g_Logger.Info("Arrêt du simulateur...");
     simulator.Shutdown();
+    
+    g_Logger.Info("Fichier log sauvegardé: " + g_Logger.GetFilename());
+    g_Logger.Close();
     
     return 0;
 }
