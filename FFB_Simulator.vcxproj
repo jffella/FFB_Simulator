@@ -51,7 +51,7 @@
     <AdditionalLibraryDirectories>$(VCToolsInstallDir)lib\x64;$(WindowsSdkDir)Lib\$(WindowsTargetPlatformVersion)\um\x64;$(WindowsSdkDir)Lib\$(WindowsTargetPlatformVersion)\ucrt\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 
     <!-- Removed undefined variable; only the required system libs remain -->
-    <ProjectLinkerAdditionalDependencies>dinput8.lib;dxguid.lib;user32.lib;kernel32.lib;%(ProjectLinkerAdditionalDependencies)</ProjectLinkerAdditionalDependencies>
+    <ProjectLinkerAdditionalDependencies>dinput8.lib;dxguid.lib;user32.lib;kernel32.lib</ProjectLinkerAdditionalDependencies>
 
     <ClCompileLanguageStandard>stdc++17</ClCompileLanguageStandard>
   </PropertyGroup>
