@@ -68,6 +68,20 @@ private:
         return oss.str();
     }
     
+    // Helper pour construire le message à partir des arguments
+    template<typename T>
+    void BuildMessage(std::ostringstream& oss, T&& arg)
+    {
+        oss << std::forward<T>(arg);
+    }
+    
+    template<typename T, typename... Args>
+    void BuildMessage(std::ostringstream& oss, T&& first, Args&&... args)
+    {
+        oss << std::forward<T>(first);
+        BuildMessage(oss, std::forward<Args>(args)...);
+    }
+    
 public:
     Logger() : m_IsOpen(false) {}
     
@@ -105,9 +119,14 @@ public:
         }
     }
     
-    void Log(const std::string& level, const std::string& message)
+    // Méthode template principale
+    template<typename... Args>
+    void Log(const std::string& level, Args&&... args)
     {
-        std::string fullMessage = "[" + GetTimestamp() + "] [" + level + "] " + message;
+        std::ostringstream oss;
+        BuildMessage(oss, std::forward<Args>(args)...);
+        
+        std::string fullMessage = "[" + GetTimestamp() + "] [" + level + "] " + oss.str();
         
         // Affichage console
         std::cout << fullMessage << std::endl;
@@ -120,33 +139,53 @@ public:
         }
     }
     
-    void Info(const std::string& message)
+    // Méthodes pratiques avec templates variadiques
+    template<typename... Args>
+    void Info(Args&&... args)
     {
-        Log("INFO", message);
+        Log("INFO", std::forward<Args>(args)...);
     }
     
-    void Warning(const std::string& message)
+    template<typename... Args>
+    void Warning(Args&&... args)
     {
-        Log("WARN", message);
+        Log("WARN", std::forward<Args>(args)...);
     }
     
-    void Error(const std::string& message)
+    template<typename... Args>
+    void Error(Args&&... args)
     {
-        Log("ERROR", message);
+        Log("ERROR", std::forward<Args>(args)...);
     }
     
-    void Debug(const std::string& message)
+    template<typename... Args>
+    void Debug(Args&&... args)
     {
-        Log("DEBUG", message);
+        Log("DEBUG", std::forward<Args>(args)...);
     }
     
-    void Success(const std::string& message)
+    template<typename... Args>
+    void Success(Args&&... args)
     {
-        Log("OK", message);
+        Log("OK", std::forward<Args>(args)...);
     }
+    
+    // Helper pour formater en hexadécimal
+    struct Hex
+    {
+        HRESULT value;
+        explicit Hex(HRESULT v) : value(v) {}
+    };
     
     std::string GetFilename() const { return m_LogFilename; }
 };
+
+// Surcharge de l'opérateur << pour Logger::Hex
+inline std::ostream& operator<<(std::ostream& os, const Logger::Hex& hex)
+{
+    os << "0x" << std::hex << std::uppercase << hex.value << std::dec;
+    return os;
+}
 
 // Instance globale du logger
 static Logger g_Logger;
@@ -306,9 +345,7 @@ bool ForceEffectSimulator::InitializeDirectInput()
     
     if (FAILED(hr))
     {
-        std::ostringstream oss;
-        oss << "DirectInput8Create failed: 0x" << std::hex << hr;
-        g_Logger.Error(oss.str());
+        g_Logger.Error("DirectInput8Create failed: ", Logger::Hex(hr));
         return false;
     }
     
@@ -340,10 +377,8 @@ BOOL CALLBACK ForceEffectSimulator::EnumJoysticksCallback(const DIDEVICEINSTANCE
             WORD vid = LOWORD(dipProp.dwData);
             WORD pid = HIWORD(dipProp.dwData);
             
-            std::ostringstream oss;
-            oss << "Device trouvé: " << pdidInstance->tszProductName 
-                << " (VID: 0x" << std::hex << vid << ", PID: 0x" << pid << ")";
-            g_Logger.Debug(oss.str());
+            g_Logger.Debug("Device trouvé: ", pdidInstance->tszProductName, 
+                          " (VID: ", Logger::Hex(vid), ", PID: ", Logger::Hex(pid), ")");
             
             if (vid == SIDEWINDER_VID && pid == SIDEWINDER_PID)
             {
@@ -421,9 +456,7 @@ bool ForceEffectSimulator::SetupDataFormat()
     HRESULT hr = m_pDevice->SetDataFormat(&c_dfDIJoystick2);
     if (FAILED(hr))
     {
-        std::ostringstream oss;
-        oss << "SetDataFormat failed: 0x" << std::hex << hr;
-        g_Logger.Error(oss.str());
+        g_Logger.Error("SetDataFormat failed: ", Logger::Hex(hr));
         return false;
     }
     return true;
@@ -436,9 +469,7 @@ bool ForceEffectSimulator::SetupCooperativeLevel(HWND hwnd)
     HRESULT hr = m_pDevice->SetCooperativeLevel(hwnd, DISCL_EXCLUSIVE | DISCL_BACKGROUND);
     if (FAILED(hr))
     {
-        std::ostringstream oss;
-        oss << "SetCooperativeLevel failed: 0x" << std::hex << hr;
-        g_Logger.Error(oss.str());
+        g_Logger.Error("SetCooperativeLevel failed: ", Logger::Hex(hr));
         return false;
     }
     return true;
@@ -448,14 +479,12 @@ BOOL CALLBACK ForceEffectSimulator::EnumObjectsCallback(const DIDEVICEOBJECTINST
 {
     ForceEffectSimulator* pThis = static_cast<ForceEffectSimulator*>(pContext);
     
-    std::ostringstream oss;
-    oss << "Objet: " << pdidoi->tszName << " (Type: 0x" << std::hex << pdidoi->dwType << ")";
+    std::string ffStatus = (pdidoi->dwFlags & DIDOI_FFACTUATOR) ? " [Force Feedback]" : "";
+    g_Logger.Debug("Objet: ", pdidoi->tszName, " (Type: ", Logger::Hex(pdidoi->dwType), ")", ffStatus);
     
     // Configuration des axes force feedback
     if (pdidoi->dwFlags & DIDOI_FFACTUATOR)
     {
-        oss << " [Force Feedback]";
-        
         // Configuration de la plage de l'axe pour force feedback
         DIPROPRANGE diprg;
         diprg.diph.dwSize = sizeof(DIPROPRANGE);
@@ -468,11 +497,10 @@ BOOL CALLBACK ForceEffectSimulator::EnumObjectsCallback(const DIDEVICEOBJECTINST
         HRESULT hr = pThis->m_pDevice->SetProperty(DIPROP_RANGE, &diprg.diph);
         if (FAILED(hr))
         {
-            oss << " (Erreur config range)";
+            g_Logger.Warning("  Erreur config range pour ", pdidoi->tszName);
         }
     }
     
-    g_Logger.Debug(oss.str());
     return DIENUM_CONTINUE;
 }
 
@@ -489,10 +517,8 @@ bool ForceEffectSimulator::SetupForceFeedback()
         return false;
     }
     
-    std::ostringstream oss;
-    oss << "Capacités Force Feedback: Axes=" << caps.dwAxes 
-        << ", FFDriverVersion=" << caps.dwFFDriverVersion;
-    g_Logger.Info(oss.str());
+    g_Logger.Info("Capacités Force Feedback: Axes=", caps.dwAxes, 
+                  ", FFDriverVersion=", caps.dwFFDriverVersion);
     
     // Activation de l'autocenter (important pour le volant)
     DIPROPDWORD dipProp;
@@ -603,14 +629,12 @@ bool ForceEffectSimulator::CreateConstantEffect(const std::string& name, LONG fo
     if (SUCCEEDED(hr))
     {
         m_Effects[name] = pEffect;
-        g_Logger.Info("  Effet constant créé: " + name + " (Force: " + std::to_string(force) + ")");
+        g_Logger.Info("  Effet constant créé: ", name, " (Force: ", force, ")");
         return true;
     }
     else
     {
-        std::ostringstream oss;
-        oss << "  Erreur création effet constant " << name << ": 0x" << std::hex << hr;
-        g_Logger.Error(oss.str());
+        g_Logger.Error("  Erreur création effet constant ", name, ": ", Logger::Hex(hr));
         return false;
     }
 }
@@ -653,17 +677,13 @@ bool ForceEffectSimulator::CreatePeriodicEffect(const std::string& name, const G
     if (SUCCEEDED(hr))
     {
         m_Effects[name] = pEffect;
-        std::ostringstream oss;
-        oss << "  Effet périodique créé: " << name 
-            << " (Magnitude: " << magnitude << ", Période: " << period << "ms)";
-        g_Logger.Info(oss.str());
+        g_Logger.Info("  Effet périodique créé: ", name, 
+                     " (Magnitude: ", magnitude, ", Période: ", period, "ms)");
         return true;
     }
     else
     {
-        std::ostringstream oss;
-        oss << "  Erreur création effet périodique " << name << ": 0x" << std::hex << hr;
-        g_Logger.Error(oss.str());
+        g_Logger.Error("  Erreur création effet périodique ", name, ": ", Logger::Hex(hr));
         return false;
     }
 }
@@ -702,17 +722,12 @@ bool ForceEffectSimulator::CreateRampEffect(const std::string& name, LONG startF
     if (SUCCEEDED(hr))
     {
         m_Effects[name] = pEffect;
-        std::ostringstream oss;
-        oss << "  Effet rampe créé: " << name 
-            << " (" << startForce << " -> " << endForce << ")";
-        g_Logger.Info(oss.str());
+        g_Logger.Info("  Effet rampe créé: ", name, " (", startForce, " -> ", endForce, ")");
         return true;
     }
     else
     {
-        std::ostringstream oss;
-        oss << "  Erreur création effet rampe " << name << ": 0x" << std::hex << hr;
-        g_Logger.Error(oss.str());
+        g_Logger.Error("  Erreur création effet rampe ", name, ": ", Logger::Hex(hr));
         return false;
     }
 }
@@ -765,17 +780,13 @@ bool ForceEffectSimulator::CreateConditionEffect(const std::string& name, const 
     if (SUCCEEDED(hr))
     {
         m_Effects[name] = pEffect;
-        std::ostringstream oss;
-        oss << "  Effet condition créé: " << name 
-            << " (Coeff: " << coefficient << ", DeadBand: " << conditionParams.lDeadBand << ")";
-        g_Logger.Info(oss.str());
+        g_Logger.Info("  Effet condition créé: ", name, 
+                     " (Coeff: ", coefficient, ", DeadBand: ", conditionParams.lDeadBand, ")");
         return true;
     }
     else
     {
-        std::ostringstream oss;
-        oss << "  Erreur création effet condition " << name << ": 0x" << std::hex << hr;
-        g_Logger.Error(oss.str());
+        g_Logger.Error("  Erreur création effet condition ", name, ": ", Logger::Hex(hr));
         return false;
     }
 }
@@ -1008,9 +1019,7 @@ void ForceEffectSimulator::PlayCurrentEffect()
         }
         else
         {
-            std::ostringstream oss;
-            oss << "Erreur lors de la lecture de l'effet: 0x" << std::hex << hr;
-            g_Logger.Error(oss.str());
+            g_Logger.Error("Erreur lors de la lecture de l'effet: ", Logger::Hex(hr));
             
             // Tentative de diagnostic
             if (hr == DIERR_NOTEXCLUSIVEACQUIRED)
@@ -1334,7 +1343,27 @@ int main()
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
     
-    std::cout << "Démarrage du simulateur Force Feedback..." << std::endl;
+    // Génération du nom de fichier log avec timestamp
+    auto now = std::chrono::system_clock::now();
+    auto time_t_now = std::chrono::system_clock::to_time_t(now);
+    struct tm timeinfo;
+    localtime_s(&timeinfo, &time_t_now);
+    
+    char logFilename[256];
+    strftime(logFilename, sizeof(logFilename), "FFB_Simulator_%Y%m%d_%H%M%S.log", &timeinfo);
+    
+    // Ouverture du fichier log
+    if (!g_Logger.Open(logFilename))
+    {
+        std::cerr << "ATTENTION: Impossible de créer le fichier log: " << logFilename << std::endl;
+        std::cerr << "Les logs seront affichés uniquement dans la console." << std::endl;
+    }
+    else
+    {
+        std::cout << "Fichier log créé: " << logFilename << std::endl;
+    }
+    
+    g_Logger.Info("Démarrage du simulateur Force Feedback...");
     
     ForceEffectSimulator simulator;
     
