@@ -9,6 +9,7 @@
 #define DIRECTINPUT_VERSION 0x0800
 #include <windows.h>
 #include <dinput.h>
+#include <Shlwapi.h>
 #include <iostream>
 #include <vector>
 #include <map>
@@ -24,6 +25,7 @@
 
 #pragma comment(lib, "dinput8.lib")
 #pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "Shlwapi.lib")
 
 //==============================================================================
 // CONSTANTES
@@ -1333,6 +1335,40 @@ void ForceEffectSimulator::Shutdown()
     }
 }
 
+
+//==============================================================================
+// Fonctions utiles
+//==============================================================================
+
+/**
+ * @brief Get the process name
+ * 
+ * @return std::string the current process name
+ */
+using TSTRING = std::basic_string<TCHAR>;
+
+TSTRING GetProcessName()
+{
+    // Get program file name
+    TCHAR buffer[MAX_PATH]={0};
+    TCHAR * progName;
+    DWORD bufSize=sizeof(buffer)/sizeof(*buffer);
+    // Get the fully-qualified path of the executable
+    if(GetModuleFileName(NULL, buffer, bufSize)==bufSize)
+    {
+        std::cerr << "Erreur d'allocation buffer" << std::endl;
+    }
+    // now buffer = "c:\whatever\yourexecutable.exe"
+
+    // Go to the beginning of the file name
+    progName = PathFindFileName(buffer);
+    // now out = "yourexecutable.exe"
+
+    // Set the dot before the extension to 0 (terminate the string there)
+    *(PathFindExtension(progName)) = 0;
+    // now out = "yourexecutable"
+    return progName;
+}
 //==============================================================================
 // FONCTION MAIN
 //==============================================================================
@@ -1349,9 +1385,11 @@ int main()
     struct tm timeinfo;
     localtime_s(&timeinfo, &time_t_now);
     
-    char logFilename[256];
-    strftime(logFilename, sizeof(logFilename), "FFB_Simulator_%Y%m%d_%H%M%S.log", &timeinfo);
+    char logDate[32];
+    strftime(logDate, sizeof(logDate), "%Y%m%d_%H%M%S", &timeinfo);
     
+    char logFilename[256];
+    sprintf(logFilename, "%s_%s.log", GetProcessName().c_str(), logDate);
     // Ouverture du fichier log
     if (!g_Logger.Open(logFilename))
     {
