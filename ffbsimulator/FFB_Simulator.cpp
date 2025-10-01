@@ -1369,9 +1369,10 @@ int main()
     
     if (!simulator.Initialize())
     {
-        std::cerr << "Échec de l'initialisation!" << std::endl;
-        std::cout << "Appuyez sur une touche pour continuer..." << std::endl;
+        g_Logger.Error("Échec de l'initialisation!");
+        std::cout << "\nAppuyez sur une touche pour continuer..." << std::endl;
         _getch();
+        g_Logger.Close();
         return -1;
     }
     
