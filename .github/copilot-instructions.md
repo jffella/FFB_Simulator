@@ -2,6 +2,15 @@
 
 Ce projet simule des effets de retour de force pour le volant Microsoft Sidewinder Force Feedback Wheel sous Windows, en utilisant DirectInput. Il est principalement contenu dans `FFB_Simulator.cpp`.
 
+## Versions du programme
+ Le projet contient deux versions : une version Windows (avec DirectInput) et une version Linux (expérimentale).
+  - `win/src/FFB_Simulator.cpp` (Windows)
+  - `linux/src/FFB_Simulator.cpp` (Linux)
+
+- La version Linux est située dans le sous-répertoire `linux` et la version Windows dans le sous-répertoire `win`.
+- La version Linux utilise `udev` pour la détection du périphérique et le pilote force feedback du kernel pour la gestion des effets (pas DirectInput).
+
+
 ## Architecture et composants
 - **Classe principale** : `ForceEffectSimulator` gère l'initialisation DirectInput, la détection du périphérique, la création et le contrôle des effets, et l'interface utilisateur console.
 - **Effets supportés** : Effets constants, périodiques (sinus, carré, triangle, dent de scie), rampes, et conditions (ressort, amortissement, inertie, friction).
@@ -26,16 +35,35 @@ Ce projet simule des effets de retour de force pour le volant Microsoft Sidewind
   - Tous les effets sont stoppés et libérés dans `CleanupEffects()` lors de l'arrêt ou de la réinitialisation.
 
 ## Workflows critiques
-- **Compilation** :
-  - Visual Studio : `cl /EHsc FFB_Simulator.cpp dinput8.lib dxguid.lib`
-  - MinGW : `g++ -std=c++11 FFB_Simulator.cpp -ldinput8 -ldxguid -o FFB_Simulator.exe`
-- **Dépendances** :
+
+### Compilation et exécution sous Windows
+- Visual Studio : `cl /EHsc FFB_Simulator.cpp dinput8.lib dxguid.lib`
+- MinGW : `g++ -std=c++11 FFB_Simulator.cpp -ldinput8 -ldxguid -o FFB_Simulator.exe`
+- Ou utiliser la tâche VS Code "Build FFB Simulator" (voir `win/` et le `tasks.json` fourni dans l'environnement) pour compiler avec les chemins exacts.
+- Dépendances :
   - Windows SDK ou DirectX SDK
   - Bibliothèques : `dinput8.lib`, `dxguid.lib`
   - Headers : `dinput.h`
-- **Exécution** :
+- Exécution :
   - Nécessite Windows 7+ et le volant Sidewinder connecté
   - Pilotes DirectInput installés
+
+### Compilation et exécution sous Linux
+- Le répertoire `linux/` contient la version Linux et les fichiers CMake.
+- Utiliser CMake pour générer et construire :
+
+```bash
+cd linux
+cmake .
+make
+```
+
+- Dépendances :
+  - udev pour la détection du périphérique
+  - Pilote force-feedback du kernel (libération et accès via /dev/input)
+- Exécution :
+  - Nécessite un noyau Linux avec le support force-feedback et le périphérique connecté
+  - Le binaire `linux/FFB_Simulator` sera produit par la compilation
 
 ## Conventions et patterns spécifiques
 - **Effets** : Les effets sont créés et stockés dans une map `m_Effects` et navigués via `m_EffectNames`.

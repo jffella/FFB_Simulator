@@ -2,5 +2,6 @@ CMakeCache.txt
 MakeFile
 CMakeLists.txt
 *.cmake
-CMakefiles
+CMakeFiles
 build
+FFB_Simulator
