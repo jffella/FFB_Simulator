@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
 
     steps:
@@ -37,7 +37,7 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Build
+    - name: Build Win
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
@@ -45,11 +45,31 @@ jobs:
             echo "Current directory: $($PWD.Path)"
             msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}} /p:Platform=x64
 
-    - name: Upload build artifact
+    - name: Display structure of produced files
+      run: ls -R
+
+    - name: Upload Win build artifact
       uses: actions/upload-artifact@v4
       with:
         name: FFB_Simulator.exe
         path: D:\a\FFB_Simulator\FFB_Simulator\Release\FFB_Simulator.exe
 
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build Linux
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+            echo "Current directory: $($PWD.Path)"
+            g++ -std=c++17 -pthread -o FFB_Simulator src/FFB_Simulator.cpp
+
     - name: Display structure of produced files
       run: ls -R
+
+    - name: Upload Linux build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: FFB_Simulator
+        path: $($PWD.Path)/FFB_Simulator

@@ -8,6 +8,23 @@ Ce projet simule des effets de retour de force pour le volant Microsoft Sidewind
 - **Boucle principale** : Interface utilisateur console avec gestion des touches pour contrôler les effets en temps réel.
 - **Thread de mise à jour** : Actualise l'état du périphérique à intervalle régulier.
 
+## Gestion des effets (détails avancés)
+- **Création** :
+  - Les effets sont créés dans `CreateAllEffects()` lors de l'initialisation, via des méthodes dédiées (`CreateConstantEffect`, `CreatePeriodicEffect`, `CreateRampEffect`, `CreateConditionEffect`).
+  - Chaque effet est instancié avec des paramètres spécifiques (force, direction, magnitude, période, coefficient, saturation).
+  - Les effets sont stockés dans `m_Effects` (map nom → pointeur DirectInputEffect) et listés dans `m_EffectNames` pour la navigation.
+- **Contrôle** :
+  - Seul un effet peut être joué à la fois (`PlayCurrentEffect`/`StopCurrentEffect`).
+  - Tous les effets peuvent être arrêtés via `StopAllEffects`.
+  - Les paramètres d'intensité, direction et durée peuvent être ajustés à chaud pour certains effets (voir `AdjustIntensity`, `AdjustDirection`, `AdjustDuration`).
+  - Pour les effets constants et périodiques, la magnitude peut être modifiée dynamiquement via `SetParameters`.
+  - Les effets de condition sont permanents et simulés via des coefficients et saturations.
+- **Navigation** :
+  - Utilisation des touches N/P pour changer d'effet courant.
+  - L'effet courant est affiché dans la console, avec son état (EN COURS/ARRÊTÉ).
+- **Libération mémoire** :
+  - Tous les effets sont stoppés et libérés dans `CleanupEffects()` lors de l'arrêt ou de la réinitialisation.
+
 ## Workflows critiques
 - **Compilation** :
   - Visual Studio : `cl /EHsc FFB_Simulator.cpp dinput8.lib dxguid.lib`
@@ -44,3 +61,7 @@ Ce projet simule des effets de retour de force pour le volant Microsoft Sidewind
 ---
 
 Pour toute modification, respecter la structure de la classe principale et les conventions de gestion des effets. Documenter tout nouveau workflow ou effet ajouté.
+
+---
+
+> **Feedback demandé** : Les détails sur la gestion des effets sont-ils suffisants ? Voulez-vous plus d’exemples sur la modification dynamique ou la création d’effets personnalisés ?

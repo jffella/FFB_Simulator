@@ -58,7 +58,7 @@
 
   <!-- Compile all .cpp under ffbsimulator (recursively) -->
   <ItemGroup>
-    <ClCompile Include="ffbsimulator\**\*.cpp" />
+    <ClCompile Include="src\**\*.cpp" />
   </ItemGroup>
 
   <PropertyGroup>

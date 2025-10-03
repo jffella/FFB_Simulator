@@ -16,7 +16,7 @@
                 "/O2",
                 "/MD",
                 "/Fe:FFB_Simulator.exe",
-                "${workspaceFolder}\\ffbsimulator\\FFB_Simulator.cpp",
+                "${workspaceFolder}\\ffbsimulator\\win\\src\\FFB_Simulator.cpp",
                 "/link",
                 "/LIBPATH:D:\\Program Files\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\lib\\x64",
                 "/LIBPATH:D:\\Program Files\\Windows Kits\\10\\Lib\\10.0.26100.0\\um\\x64",

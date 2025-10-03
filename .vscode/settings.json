@@ -71,5 +71,6 @@
     },
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.intelliSenseEngine": "default",
-    "C_Cpp.formatting": "vcFormat"
+    "C_Cpp.formatting": "vcFormat",
+    "cmake.sourceDirectory": "${workspaceFolder}/ffbsimulator"
 }
