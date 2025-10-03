@@ -1,6 +1,15 @@
-# Instructions pour les agents IA sur FFB_Simulator
+# FFB_Simulator
 
-Ce projet simule des effets de retour de force pour le volant Microsoft Sidewinder Force Feedback Wheel sous Windows, en utilisant DirectInput. Il est principalement contenu dans `FFB_Simulator.cpp`.
+Ce projet simule des effets de retour de force pour le volant Microsoft Sidewinder Force Feedback Wheel sous Windows en utilisant DirectInput, et sous Linux en utilisant udev et le module force feedback du kernel. Il est principalement contenu dans `FFB_Simulator.cpp`.
+
+## Versions du programme
+ Le projet contient deux versions : une version Windows (avec DirectInput) et une version Linux (expérimentale).
+  - `win/src/FFB_Simulator.cpp` (Windows)
+  - `linux/src/FFB_Simulator.cpp` (Linux)
+
+- La version Linux est située dans le sous-répertoire `linux` et la version Windows dans le sous-répertoire `win`.
+- La version Linux utilise `udev` pour la détection du périphérique et le pilote force feedback du kernel pour la gestion des effets (pas DirectInput).
+
 
 ## Architecture et composants
 - **Classe principale** : `ForceEffectSimulator` gère l'initialisation DirectInput, la détection du périphérique, la création et le contrôle des effets, et l'interface utilisateur console.
@@ -8,17 +17,53 @@ Ce projet simule des effets de retour de force pour le volant Microsoft Sidewind
 - **Boucle principale** : Interface utilisateur console avec gestion des touches pour contrôler les effets en temps réel.
 - **Thread de mise à jour** : Actualise l'état du périphérique à intervalle régulier.
 
+## Gestion des effets (détails avancés)
+- **Création** :
+  - Les effets sont créés dans `CreateAllEffects()` lors de l'initialisation, via des méthodes dédiées (`CreateConstantEffect`, `CreatePeriodicEffect`, `CreateRampEffect`, `CreateConditionEffect`).
+  - Chaque effet est instancié avec des paramètres spécifiques (force, direction, magnitude, période, coefficient, saturation).
+  - Les effets sont stockés dans `m_Effects` (map nom → pointeur DirectInputEffect) et listés dans `m_EffectNames` pour la navigation.
+- **Contrôle** :
+  - Seul un effet peut être joué à la fois (`PlayCurrentEffect`/`StopCurrentEffect`).
+  - Tous les effets peuvent être arrêtés via `StopAllEffects`.
+  - Les paramètres d'intensité, direction et durée peuvent être ajustés à chaud pour certains effets (voir `AdjustIntensity`, `AdjustDirection`, `AdjustDuration`).
+  - Pour les effets constants et périodiques, la magnitude peut être modifiée dynamiquement via `SetParameters`.
+  - Les effets de condition sont permanents et simulés via des coefficients et saturations.
+- **Navigation** :
+  - Utilisation des touches N/P pour changer d'effet courant.
+  - L'effet courant est affiché dans la console, avec son état (EN COURS/ARRÊTÉ).
+- **Libération mémoire** :
+  - Tous les effets sont stoppés et libérés dans `CleanupEffects()` lors de l'arrêt ou de la réinitialisation.
+
 ## Workflows critiques
-- **Compilation** :
-  - Visual Studio : `cl /EHsc FFB_Simulator.cpp dinput8.lib dxguid.lib`
-  - MinGW : `g++ -std=c++11 FFB_Simulator.cpp -ldinput8 -ldxguid -o FFB_Simulator.exe`
-- **Dépendances** :
+
+### Compilation et exécution sous Windows
+- Visual Studio : `cl /EHsc FFB_Simulator.cpp dinput8.lib dxguid.lib`
+- MinGW : `g++ -std=c++11 FFB_Simulator.cpp -ldinput8 -ldxguid -o FFB_Simulator.exe`
+- Ou utiliser la tâche VS Code "Build FFB Simulator" (voir `win/` et le `tasks.json` fourni dans l'environnement) pour compiler avec les chemins exacts.
+- Dépendances :
   - Windows SDK ou DirectX SDK
   - Bibliothèques : `dinput8.lib`, `dxguid.lib`
   - Headers : `dinput.h`
-- **Exécution** :
+- Exécution :
   - Nécessite Windows 7+ et le volant Sidewinder connecté
   - Pilotes DirectInput installés
+
+### Compilation et exécution sous Linux
+- Le répertoire `linux/` contient la version Linux et les fichiers CMake.
+- Utiliser CMake pour générer et construire :
+
+```bash
+cd linux
+cmake .
+make
+```
+
+- Dépendances :
+  - udev pour la détection du périphérique
+  - Pilote force-feedback du kernel (libération et accès via /dev/input)
+- Exécution :
+  - Nécessite un noyau Linux avec le support force-feedback et le périphérique connecté
+  - Le binaire `linux/FFB_Simulator` sera produit par la compilation
 
 ## Conventions et patterns spécifiques
 - **Effets** : Les effets sont créés et stockés dans une map `m_Effects` et navigués via `m_EffectNames`.
@@ -40,7 +85,3 @@ Ce projet simule des effets de retour de force pour le volant Microsoft Sidewind
 
 ## Fichiers clés
 - `FFB_Simulator.cpp` : Toute la logique du simulateur.
-
----
-
-Pour toute modification, respecter la structure de la classe principale et les conventions de gestion des effets. Documenter tout nouveau workflow ou effet ajouté.
