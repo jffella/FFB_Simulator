@@ -58,7 +58,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: FFB_Simulator.exe
-        path: $($PWD.Path)\Release\FFB_Simulator.exe
+        path: ${{env.SOLUTION_FILE_PATH}}\Release\FFB_Simulator.exe
 
   build-linux:
     runs-on: ubuntu-latest
@@ -69,7 +69,7 @@ jobs:
     - name: Build Linux
       uses: threeal/cmake-action@v2.1.0
       with:
-        source-dir: ffbsimulator/linux
+        source-dir: ffbsimulator
 
     - name: Display structure of produced files
       run: ls -R
@@ -78,4 +78,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: FFB_Simulator
-        path: $($PWD.Path)/FFB_Simulator
+        path: $($PWD.Path)/ffbsimulator/FFB_Simulator
