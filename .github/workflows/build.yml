@@ -20,6 +20,12 @@ env:
   # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
   BUILD_CONFIGURATION: Release
 
+  # Path to project
+  PROJ_PATH: ffbsimulator
+
+  # Path to Linux project
+  LINUX_PROJ_PATH: ./ffbsimulator/linux
+
 permissions:
   contents: read
 
@@ -39,9 +45,6 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Display structure of project files
-      run: ls -R
-
     - name: Build Win
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
@@ -52,13 +55,13 @@ jobs:
         msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
 
     - name: Display structure of produced files
-      run: ls -R
+      run: ls -R ${{env.SOLUTION_FILE_PATH}}
 
     - name: Upload Win build artifact
       uses: actions/upload-artifact@v4
       with:
         name: FFB_Simulator.exe
-        path: ${{env.SOLUTION_FILE_PATH}}\Release\FFB_Simulator.exe
+        path: ${{env.SOLUTION_FILE_PATH}}\${{env.BUILD_CONFIGURATION}}\FFB_Simulator.exe
 
   build-linux:
     runs-on: ubuntu-latest
@@ -69,7 +72,7 @@ jobs:
     - name: Build Linux
       uses: threeal/cmake-action@v2.1.0
       with:
-        source-dir: ffbsimulator
+        source-dir: ${{env.PROJ_PATH}}
 
     - name: Display structure of produced files
       run: ls -R
@@ -77,5 +80,5 @@ jobs:
     - name: Upload Linux build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: FFB_Simulator
-        path: $($PWD.Path)/ffbsimulator/FFB_Simulator
+        name: ffbsimulator
+        path: ${{env.LINUX_PROJ_PATH}}/FFB_Simulator
