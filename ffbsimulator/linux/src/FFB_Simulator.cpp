@@ -420,19 +420,71 @@ bool ForceEffectSimulator::FindDevice()
         std::string path = std::string("/dev/input/") + entry->d_name;
         int fd = open(path.c_str(), O_RDWR);
         if (fd < 0)
+        {
+            g_Logger.Debug("Impossible d'ouvrir ", path, " (", strerror(errno), ")");
             continue;
+        }
+        
+        // Récupération du nom du device
+        char name[256] = "Unknown";
+        ioctl(fd, EVIOCGNAME(sizeof(name)), name);
         
         // Vérification du VID/PID
         struct input_id device_id;
+        memset(&device_id, 0, sizeof(device_id));
+        
         if (ioctl(fd, EVIOCGID, &device_id) >= 0)
         {
-            if (device_id.vendor == SIDEWINDER_VID && device_id.product == SIDEWINDER_PID)
+            g_Logger.Debug("Device ", path, ": ", name,
+                          " (VID: ", Logger::Hex(device_id.vendor),
+                          ", PID: ", Logger::Hex(device_id.product), ")");
+            
+            // Vérification du nom pour plus de flexibilité
+            bool isNameMatch = (strstr(name, "SideWinder") != nullptr || 
+                               strstr(name, "Sidewinder") != nullptr ||
+                               strstr(name, "SIDEWINDER") != nullptr);
+            
+            bool isVidPidMatch = (device_id.vendor == SIDEWINDER_VID && 
+                                 device_id.product == SIDEWINDER_PID);
+            
+            if (isNameMatch || isVidPidMatch)
             {
                 // Vérification des capacités FF
                 unsigned long features[4];
-                if (ioctl(fd, EVIOCGBIT(EV_FF, FF_MAX), features) >= 0)
+                memset(features, 0, sizeof(features));
+                
+                int ff_bits = ioctl(fd, EVIOCGBIT(EV_FF, FF_MAX), features);
+                
+                if (ff_bits >= 0)
                 {
-                    if (features[FF_CONSTANT/8] & (1 << (FF_CONSTANT % 8)))
+                    // Debug: afficher toutes les features
+                    g_Logger.Debug("  FF capabilities bits: ",
+                                  Logger::Hex(features[0]), " ",
+                                  Logger::Hex(features[1]), " ",
+                                  Logger::Hex(features[2]), " ",
+                                  Logger::Hex(features[3]));
+                    
+                    // Test plus robuste: vérifier si AU MOINS un effet FF est supporté
+                    bool hasFF = false;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        if (features[i] != 0)
+                        {
+                            hasFF = true;
+                            break;
+                        }
+                    }
+                    
+                    // Test spécifique pour FF_CONSTANT (bit 0x50 = 80)
+                    bool hasConstant = (features[FF_CONSTANT/sizeof(long)/8] & (1UL << (FF_CONSTANT % (sizeof(long)*8))));
+                    
+                    g_Logger.Info("Device candidat trouvé: ", name);
+                    g_Logger.Info("  Path: ", path);
+                    g_Logger.Info("  VID/PID: ", Logger::Hex(device_id.vendor), "/", Logger::Hex(device_id.product));
+                    g_Logger.Info("  Force Feedback: ", hasFF ? "OUI" : "NON");
+                    g_Logger.Info("  FF_CONSTANT: ", hasConstant ? "OUI" : "NON");
+                    
+                    if (hasFF)
                     {
                         m_DevicePath = path;
                         close(fd);
@@ -442,8 +494,20 @@ bool ForceEffectSimulator::FindDevice()
                         g_Logger.Info("Device: ", path);
                         return true;
                     }
+                    else
+                    {
+                        g_Logger.Warning("Device trouvé mais sans support FF, vérification suivante...");
+                    }
+                }
+                else
+                {
+                    g_Logger.Warning("EVIOCGBIT(EV_FF) a échoué pour ", path, ": ", strerror(errno));
                 }
             }
+        }
+        else
+        {
+            g_Logger.Debug("EVIOCGID a échoué pour ", path);
         }
         
         close(fd);
@@ -451,6 +515,7 @@ bool ForceEffectSimulator::FindDevice()
     
     closedir(dir);
     g_Logger.Error("Aucun volant Sidewinder trouvé avec support FF");
+    g_Logger.Info("Devices scannés - vérifiez les logs ci-dessus");
     return false;
 }
 
@@ -521,7 +586,7 @@ bool ForceEffectSimulator::SetupForceFeedback()
     }
     else
     {
-        g_Logger.Info("Autocenter désactivé");
+        g_Logger.Info("Autocenter désactivé (sera réactivé automatiquement lors de l'arrêt des effets)");
     }
     
     return true;
