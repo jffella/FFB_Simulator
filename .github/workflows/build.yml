@@ -84,19 +84,13 @@ jobs:
         path: ${{env.LINUX_PROJ_PATH}}/FFB_Simulator
   
   build-pi:
-    name: Build for ARM64
-    runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Dependencies
+    - name: Build for ARM64
+      uses: carlosperate/arm-none-eabi-gcc-action@v1
+      with:
+        release: 'latest'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y binutils-arm-linux-gnueabihf g++-arm-linux-gnueabihf gcc-arm-linux-gnueabihf
-      - name: Build PI
-        run: |
-          arm-linux-gnueabihf-g++ -v
+          arm-none-eabi-gcc --version
           cd ${{env.LINUX_PROJ_PATH}}/src
-          arm-linux-gnueabihf-g++ -O3 -g3 -Wall -c -o -fPIC "FFB_Simulator-arm64.o" "FFB_Simulator.cpp"
-          arm-linux-gnueabihf-g++ -o "FFB_Simulator-arm64" FFB_Simulator-arm64.o
+          arm-none-eabi-gcc -O3 -g3 -Wall -c -o -fPIC "FFB_Simulator-arm64.o" "FFB_Simulator.cpp"
+          arm-none-eabi-gcc -o "FFB_Simulator-arm64" FFB_Simulator-arm64.o
