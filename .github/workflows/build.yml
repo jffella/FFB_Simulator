@@ -60,7 +60,7 @@ jobs:
     - name: Upload Win build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: FFB_Simulator.exe
+        name: FFB Simulator Win x64
         path: ${{env.SOLUTION_FILE_PATH}}\${{env.BUILD_CONFIGURATION}}\FFB_Simulator.exe
 
   build-linux:
@@ -80,5 +80,20 @@ jobs:
     - name: Upload Linux build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ffbsimulator
+        name: FFB Simulator Linux x64
         path: ${{env.LINUX_PROJ_PATH}}/FFB_Simulator
+  
+  build-pi:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build for ARM64
+      uses: carlosperate/arm-none-eabi-gcc-action@v1
+      with:
+        release: 'latest'
+    - run: |
+        arm-none-eabi-gcc --version
+        ls -R
+        cd ${{env.LINUX_PROJ_PATH}}/src
+        arm-none-eabi-gcc -O3 -g3 -Wall -c -o -fPIC "FFB_Simulator-arm64.o" "FFB_Simulator.cpp"
+        arm-none-eabi-gcc -o "FFB_Simulator-arm64" FFB_Simulator-arm64.o
