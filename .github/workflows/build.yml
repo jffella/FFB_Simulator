@@ -84,6 +84,7 @@ jobs:
         path: ${{env.LINUX_PROJ_PATH}}/FFB_Simulator
   
   build-pi:
+    runs-on: ubuntu-latest
     steps:
     - name: Build for ARM64
       uses: carlosperate/arm-none-eabi-gcc-action@v1
