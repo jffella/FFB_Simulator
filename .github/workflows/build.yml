@@ -92,6 +92,7 @@ jobs:
         release: 'latest'
     - run: |
         arm-none-eabi-gcc --version
+        ls -R
         cd ${{env.LINUX_PROJ_PATH}}/src
         arm-none-eabi-gcc -O3 -g3 -Wall -c -o -fPIC "FFB_Simulator-arm64.o" "FFB_Simulator.cpp"
         arm-none-eabi-gcc -o "FFB_Simulator-arm64" FFB_Simulator-arm64.o
